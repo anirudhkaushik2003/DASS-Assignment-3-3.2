@@ -1,0 +1,324 @@
+import imp
+import os
+from pickle import TRUE
+import warnings
+
+import numpy as np
+from colorama import init as cinit
+from colorama import Fore, Back, Style
+import random
+from time import monotonic as clock, sleep
+from building import Building
+import config as conf
+
+from image import Image, Rect
+from ImageLoader import *
+from sprite import *
+from groups import *
+from turret import Turret
+from tower import Tower
+from walls import Walls
+
+warnings.simplefilter(action="ignore", category=FutureWarning)
+
+
+class World:
+    def __init__(self, data):
+        self.tile_list = []
+        row_count = 0
+        for row in data:
+            col_count = 0
+            for tile in row:
+                if tile[0] == 1:
+                    img = Tree
+                    img.rect = img.get_rect()
+                    img.rect.x = col_count
+                    img.rect.y = row_count
+                    block = (img.foreground_color(Fore.GREEN), img.rect, tile[1])
+                    self.tile_list.append(block)
+                if tile[0] == 3:
+                    building = Building(
+                        castleLarge,
+                        col_count,
+                        row_count,
+                        tile[0],
+                        random.choice(
+                            [
+                                conf.BUILDING_COLOR1,
+                                conf.BUILDING_COLOR2,
+                                conf.BUILDING_COLOR3,
+                                conf.BUILDING_COLOR4,
+                                conf.BUILDING_COLOR5,
+                            ]
+                        ),
+                        250,
+                    )
+                    building_group.add(building)
+                if tile[0] == 2:
+                    building = Building(
+                        castle1,
+                        col_count,
+                        row_count,
+                        tile[0],
+                        random.choice(
+                            [
+                                conf.BUILDING_COLOR1,
+                                conf.BUILDING_COLOR2,
+                                conf.BUILDING_COLOR3,
+                                conf.BUILDING_COLOR4,
+                                conf.BUILDING_COLOR5,
+                            ]
+                        ),
+                        120,
+                    )
+                    building_group.add(building)
+                if tile[0] == 4:####
+                    img = cloudCluster
+                    img.rect = img.get_rect()
+                    img.rect.x = col_count
+                    img.rect.y = row_count
+                    block = (img.foreground_color(conf.CLOUD_COLOR), img.rect, tile[1])
+                    self.tile_list.append(block)
+                if tile[0] == 5:
+                    img = ground_block
+                    img.rect = img.get_rect()
+                    img.rect.x = col_count
+                    img.rect.y = row_count
+                    block = (img.foreground_color(Fore.RED), img.rect, tile[1])
+                    self.tile_list.append(block)
+                if tile[0] == 6:
+                    turret_1 = Turret(
+                        turret, col_count, row_count, tile[0], conf.BUILDING_COLOR
+                    )
+                    building_group.add(turret_1)
+                if tile[0] == 9:
+                    turret_2 = Tower(
+                        wiz_tower, col_count, row_count, 6, conf.BUILDING_COLOR
+                    )
+                    building_group.add(turret_2)
+                if tile[0] == 7:
+                    img = spawn_point
+                    img.rect = img.get_rect()
+                    img.rect.x = col_count
+                    img.rect.y = row_count
+                    block = (img.foreground_color(conf.SPAWN_COLOR), img.rect, tile[1])
+                    self.tile_list.append(block)
+                if tile[0] == 8:
+                    wall_1 = Walls(wall_block, col_count, row_count, conf.WALL_COLOR)
+                    wall_group.add(wall_1)
+
+                col_count += 1
+            row_count += 1
+
+    def draw(self, screen, screen_scroll):
+        for tile in self.tile_list:
+            tile[1].x += screen_scroll
+            screen.blit(tile[0], tile[1])
+
+###### WORLD DATA LOADER #####################
+rows, cols = os.popen("stty size", "r").read().split()
+height = int(rows) - conf.BUFFER_DOWN
+width = int(cols) - conf.BUFFER_RIGHT
+
+data1 = np.array(
+    [[[0, True] for j in range(width * 2)] for i in range(height)],
+    dtype="object",
+)
+
+data1[0][0] = [4, True]
+data1[0][50] = [4, True]
+data1[0][100] = [4, True]
+data1[0][150] = [4, True]
+data1[0][200] = [4, True]
+data1[0][250] = [4, True]
+# town hall
+data1[11][90] = [3, True]
+# turrets
+# data1[14][68] = [6, True]
+# data1[17][158] = [6, True]
+
+# data1[12][30] = [9,True]
+# data1[12][230] = [9,True]
+
+
+# buildings
+data1[17][50] = [2, True]
+data1[27][50] = [2, True]
+data1[24][68] = [2, True]
+data1[24][208] = [2, True]
+data1[11][208] = [2, True]
+
+# spwn points
+data1[conf.SPAWN1_Y][conf.SPAWN1_X] = [7, False]
+data1[conf.SPAWN2_Y][conf.SPAWN2_X] = [7, False]
+data1[conf.SPAWN3_Y][conf.SPAWN3_X] = [7, False]
+
+# place walls
+for i in range(10, height - 12):
+    data1[i][48] = [8, True]
+for i in range(48, 148):
+    data1[height - 12][i] = [8, True]
+for i in range(25, height - 11):
+    data1[i][148] = [8, True]
+
+for i in range(148, 200):
+    data1[25][i] = [8, True]
+for i in range(10, 26):
+    data1[i][200] = [8, True]
+
+
+last_j = 0
+for i in range(0, height, 10):
+    for j in range(301, width * 2 - 1, 20):
+        data1[i][j] = [1, False]
+        last_j = j
+
+for i in range(0, height, 10):
+    for j in range(last_j, width * 2, 20):
+        data1[i][j] = [1, True]
+
+
+for i in range(height - 2, height):
+    for j in range(width * 2):
+        data1[i][j] = [5, True]
+for i in range(1, height - 2):
+    data1[i][0] = [5, True]
+
+
+
+data2 = np.array(
+    [[[0, True] for j in range(width * 2)] for i in range(height)],
+    dtype="object",
+)
+
+data2[0][0] = [4, True]
+data2[0][50] = [4, True]
+data2[0][100] = [4, True]
+data2[0][150] = [4, True]
+data2[0][200] = [4, True]
+data2[0][250] = [4, True]
+# town hall
+data2[11][90] = [3, True]
+# turrets
+data2[14][68] = [6, True]
+data2[17][158] = [6, True]
+data2[12][30] = [9,True]
+data2[12][230] = [9,True]
+
+
+# buildings
+data2[17][50] = [2, True]
+data2[27][50] = [2, True]
+data2[24][68] = [2, True]
+data2[24][208] = [2, True]
+data2[11][208] = [2, True]
+
+# spwn points
+data2[conf.SPAWN1_Y][conf.SPAWN1_X] = [7, False]
+data2[conf.SPAWN2_Y][conf.SPAWN2_X] = [7, False]
+data2[conf.SPAWN3_Y][conf.SPAWN3_X] = [7, False]
+
+# place walls
+for i in range(10, height - 12):
+    data2[i][48] = [8, True]
+for i in range(48, 148):
+    data2[height - 12][i] = [8, True]
+for i in range(25, height - 11):
+    data2[i][148] = [8, True]
+
+for i in range(148, 200):
+    data2[25][i] = [8, True]
+for i in range(10, 26):
+    data2[i][200] = [8, True]
+
+
+last_j = 0
+for i in range(0, height, 10):
+    for j in range(301, width * 2 - 1, 20):
+        data2[i][j] = [1, False]
+        last_j = j
+
+for i in range(0, height, 10):
+    for j in range(last_j, width * 2, 20):
+        data2[i][j] = [1, True]
+
+
+for i in range(height - 2, height):
+    for j in range(width * 2):
+        data2[i][j] = [5, True]
+for i in range(1, height - 2):
+    data2[i][0] = [5, True]
+
+
+data3 = np.array(
+    [[[0, True] for j in range(width * 2)] for i in range(height)],
+    dtype="object",
+)
+
+data3[0][0] = [4, True]
+data3[0][50] = [4, True]
+data3[0][100] = [4, True]
+data3[0][150] = [4, True]
+data3[0][200] = [4, True]
+data3[0][250] = [4, True]
+# town hall
+data3[11][90] = [3, True]
+# turrets
+data3[14][68] = [6, True]
+data3[17][158] = [6, True]
+
+data3[12][30] = [9,True]
+data3[12][230] = [9,True]
+
+
+# buildings
+data3[17][50] = [2, True]
+data3[27][50] = [2, True]
+data3[24][68] = [2, True]
+data3[24][208] = [2, True]
+data3[11][208] = [2, True]
+
+# spwn points
+data3[conf.SPAWN1_Y][conf.SPAWN1_X] = [7, False]
+data3[conf.SPAWN2_Y][conf.SPAWN2_X] = [7, False]
+data3[conf.SPAWN3_Y][conf.SPAWN3_X] = [7, False]
+
+# place walls
+for i in range(10, height - 12):
+    data3[i][48] = [8, True]
+for i in range(48, 148):
+    data3[height - 12][i] = [8, True]
+for i in range(25, height - 11):
+    data3[i][148] = [8, True]
+
+for i in range(148, 200):
+    data3[25][i] = [8, True]
+for i in range(10, 26):
+    data3[i][200] = [8, True]
+
+
+last_j = 0
+for i in range(0, height, 10):
+    for j in range(301, width * 2 - 1, 20):
+        data3[i][j] = [1, False]
+        last_j = j
+
+for i in range(0, height, 10):
+    for j in range(last_j, width * 2, 20):
+        data3[i][j] = [1, True]
+
+
+for i in range(height - 2, height):
+    for j in range(width * 2):
+        data3[i][j] = [5, True]
+for i in range(1, height - 2):
+    data3[i][0] = [5, True]
+
+#############################################
+world = World(data1)
+def gen_new_world(level):
+    global world
+    if level == 2:
+        world = World(data2)
+    if level == 3:
+        world = World(data3)

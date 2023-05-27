@@ -115,7 +115,7 @@
    - Use your archers to support your troops from a distance.
   # Balloons
    - This is your only aerial unit.
-   - This is a literal hot air balloon. After you figured that hot air rises over cold air, you used a large tarp and light a burner under it to make your troops fly. 
+   - This is a literal hot air balloon. After you figured that hot air rises over cold air, you used a large tarp and lit a burner under it to make your troops fly. 
    - These specifically target the defense systems, however while moving they deal a little damage to other buildings in their way by dropping stones, oil and other objects on them. 
    - After destroying all the defenses, they will target the houses to kill the civillians. The balloons don't spare the women or the children either.
    - Although the balloon allows you to fly, because you are a barbarian and lack technology, the balloons are really fragile, avoid stacking them near wizard towers.
